@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+polars
+scipy
+sqlalchemy[asyncio]
+asyncpg
+psycopg2-binary
+httpx
+python-dateutil
+pydantic-settings
+pytest
