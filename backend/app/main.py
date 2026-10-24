@@ -16,6 +16,7 @@ from app.db.session import init_db, get_async_session
 from app.api.parity import router as parity_router
 from app.api.signals import router as signals_router
 from app.api.backtest import router as backtest_router
+from app.api.market import router as market_router
 from app.ingestion.bhavcopy import ingest_date, ingest_date_range
 from app.ingestion.csv_importer import import_csv_file, import_path_or_dir
 
@@ -46,6 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(market_router)
 app.include_router(parity_router)
 app.include_router(signals_router)
 app.include_router(backtest_router)

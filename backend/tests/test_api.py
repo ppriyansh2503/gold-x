@@ -57,6 +57,16 @@ class TestApiRoutes(unittest.TestCase):
         self.assertEqual(res.status_code, 400)
         self.assertIn("File not found", res.json().get("detail", ""))
 
+    def test_market_overview_endpoint(self):
+        res = self.client.get("/api/market-overview")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("status", res.json())
+
+    def test_system_status_endpoint(self):
+        res = self.client.get("/api/system/status")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("status", res.json())
+
 
 if __name__ == "__main__":
     unittest.main()

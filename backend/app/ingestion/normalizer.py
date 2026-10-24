@@ -4,16 +4,23 @@ from typing import Tuple
 
 logger = logging.getLogger(__name__)
 
+# Official MCX Gold Contract Specifications
+# Price quotation basis:
+# - GOLD: 10g (995 fineness, lot: 1 kg = 1000g)
+# - GOLDM: 10g (995 fineness, lot: 100g)
+# - GOLDGUINEA: 8g (999 fineness, lot: 8g)
+# - GOLDPETAL: 1g (999 fineness, lot: 1g)
+# - GOLDTEN: 10g (999 fineness, lot: 10g)
 CONTRACT_SPECS = {
     "GOLD":        {"quote_unit_grams": 10, "purity": 995, "lot_size_grams": 1000},
-    "GOLDM":       {"quote_unit_grams": 10, "purity": 995, "lot_size_grams": 10},
+    "GOLDM":       {"quote_unit_grams": 10, "purity": 995, "lot_size_grams": 100},
     "GOLDGUINEA":  {"quote_unit_grams": 8,  "purity": 999, "lot_size_grams": 8},
     "GOLDPETAL":   {"quote_unit_grams": 1,  "purity": 999, "lot_size_grams": 1},
     "GOLDTEN":     {"quote_unit_grams": 10, "purity": 999, "lot_size_grams": 10},
 }
 
 def get_multipliers(symbol: str) -> Tuple[float, float]:
-    """Returns (unit_mult, purity_mult)"""
+    """Returns (unit_mult, purity_mult) for normalizing to standard 10g 999 fineness."""
     symbol_upper = symbol.strip().upper()
     if symbol_upper not in CONTRACT_SPECS:
         raise ValueError(f"Unknown symbol: {symbol_upper}")

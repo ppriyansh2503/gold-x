@@ -29,6 +29,19 @@ class TestNormalizer(unittest.TestCase):
         self.assertAlmostEqual(u, 1.0)
         self.assertAlmostEqual(p, 1.0)
 
+        # GOLDM: 10g quote, 995 purity -> unit=1.0, purity=999/995
+        u, p = get_multipliers("GOLDM")
+        self.assertAlmostEqual(u, 1.0)
+        self.assertAlmostEqual(p, 999.0 / 995.0, places=5)
+
+    def test_contract_specs(self):
+        from app.ingestion.normalizer import CONTRACT_SPECS
+        self.assertEqual(CONTRACT_SPECS["GOLD"]["lot_size_grams"], 1000)
+        self.assertEqual(CONTRACT_SPECS["GOLDM"]["lot_size_grams"], 100)
+        self.assertEqual(CONTRACT_SPECS["GOLDGUINEA"]["lot_size_grams"], 8)
+        self.assertEqual(CONTRACT_SPECS["GOLDPETAL"]["lot_size_grams"], 1)
+        self.assertEqual(CONTRACT_SPECS["GOLDTEN"]["lot_size_grams"], 10)
+
     def test_normalize_price(self):
         # 1g petal at ₹7,500 should normalize to ₹75,000 for 10g
         norm = normalize_price("GOLDPETAL", 7500.0)

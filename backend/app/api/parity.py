@@ -49,7 +49,10 @@ async def get_parity(
     grouped: dict[str, list[dict]] = {}
     for row in rows:
         exp_key = row["expiry_date"].isoformat()
-        days_to_expiry = (row["expiry_date"] - date.today()).days
+        trade_date_val = row["trade_date"]
+        # In historical/backtest data, DTE is measured relative to the observation trade_date
+        days_to_expiry = (row["expiry_date"] - trade_date_val).days
+        calendar_dte = (row["expiry_date"] - date.today()).days
 
         entry = {
             "symbol": row["symbol"],
@@ -58,8 +61,9 @@ async def get_parity(
             "normalized_price": float(row["norm_close_10g_999"]),
             "volume": row["volume"] or 0,
             "open_interest": row["open_interest"] or 0,
-            "trade_date": row["trade_date"].isoformat(),
+            "trade_date": trade_date_val.isoformat(),
             "days_to_expiry": days_to_expiry,
+            "calendar_dte": calendar_dte,
         }
         grouped.setdefault(exp_key, []).append(entry)
 

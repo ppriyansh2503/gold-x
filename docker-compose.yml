@@ -32,6 +32,8 @@ services:
       CORS_ORIGINS: '["http://localhost","http://localhost:80","http://localhost:5173"]'
     volumes:
       - ./data:/app/data
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
     ports:
       - "${API_PORT:-8000}:8000"
     healthcheck:

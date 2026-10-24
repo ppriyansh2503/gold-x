@@ -56,6 +56,9 @@ def generate_signals(
             pl.lit(0.0).alias("total_costs"),
             pl.lit(0.0).alias("net_edge_value"),
             pl.lit(False).alias("is_tradeable"),
+            pl.lit("NO_DATA").alias("status"),
+            pl.lit("NEUTRAL").alias("direction"),
+            pl.lit("No spread data available.").alias("reason"),
         )
 
     # Sort for correct rolling computation
@@ -87,7 +90,8 @@ def generate_signals(
 
     for row in records:
         z = row.get("z_score")
-        abs_spread = abs(row.get("spread_abs", 0) or 0)
+        raw_spread = row.get("spread_abs", 0) or 0
+        abs_spread = abs(raw_spread)
         price_a = row.get("price_a", 0) or 0
         vol = min(row.get("volume_a", 0) or 0, row.get("volume_b", 0) or 0)
         oi = min(row.get("oi_a", 0) or 0, row.get("oi_b", 0) or 0)
@@ -99,21 +103,73 @@ def generate_signals(
             open_interest=oi,
         )
 
-        # Signal classification
-        if z is not None and not np.isnan(z) and abs(z) > z_threshold and edge_info["is_tradeable"]:
-            signal = "BUY_SPREAD" if z < -z_threshold else "SELL_SPREAD"
-        else:
+        has_valid_z = z is not None and not np.isnan(z)
+        is_tradeable = edge_info["is_tradeable"]
+        net_edge_val = edge_info["net_edge"]
+        total_costs = edge_info["total_costs"]
+        penalty = edge_info["liquidity_penalty"]
+
+        # Signal classification & status determination
+        if not has_valid_z:
+            status = "BASELINE_FORMATION"
             signal = "NO_TRADE"
+            direction = "BUY_SPREAD" if raw_spread < 0 else "SELL_SPREAD"
+            if is_tradeable:
+                reason = (
+                    f"Observed gross spread of ₹{abs_spread:.2f}/10g exceeds estimated round-trip costs "
+                    f"of ₹{total_costs:.2f}/10g (net edge: ₹{net_edge_val:.2f}/10g). Statistical Z-score "
+                    f"baseline requires {window} trading days of history."
+                )
+            else:
+                reason = (
+                    f"Gross spread ₹{abs_spread:.2f}/10g erased by ₹{total_costs:.2f}/10g estimated round-trip "
+                    f"costs and slippage (net edge: ₹{net_edge_val:.2f}/10g). Statistical baseline requires {window} trading days."
+                )
+        elif penalty >= 3.0 and (vol < 100 or oi < 200):
+            status = "REJECTED_INSUFFICIENT_LIQUIDITY"
+            signal = "NO_TRADE"
+            direction = "NEUTRAL"
+            reason = (
+                f"Severely illiquid contract pair (min volume: {vol}, min OI: {oi}) incurred {penalty:.1f}x "
+                f"liquidity penalty, making real-world execution unviable."
+            )
+        elif not is_tradeable or net_edge_val <= 0:
+            status = "REJECTED_COSTS_EXCEED_EDGE"
+            signal = "NO_TRADE"
+            direction = "NEUTRAL"
+            reason = (
+                f"Gross spread ₹{abs_spread:.2f}/10g wiped out by ₹{total_costs:.2f}/10g total transaction "
+                f"costs (brokerage, STT, GST, exchange fees, and slippage). Net edge: ₹{net_edge_val:.2f}/10g."
+            )
+        elif abs(z) > z_threshold and is_tradeable:
+            status = "POTENTIAL_OPPORTUNITY"
+            signal = "BUY_SPREAD" if z < -z_threshold else "SELL_SPREAD"
+            direction = signal
+            reason = (
+                f"Statistically significant divergence (|Z| = {abs(z):.2f} > {z_threshold}) with viable "
+                f"net edge of ₹{net_edge_val:.2f}/10g after all round-trip costs and slippage."
+            )
+        else:
+            status = "WATCH"
+            signal = "NO_TRADE"
+            direction = "NEUTRAL"
+            reason = (
+                f"Spread of ₹{abs_spread:.2f}/10g is within normal statistical deviation bounds "
+                f"(|Z| = {abs(z):.2f} <= {z_threshold}). Monitoring for mean-reverting divergence."
+            )
 
         enriched.append(
             {
                 "signal": signal,
-                "signal_strength": round(abs(z), 4) if z is not None and not np.isnan(z) else 0.0,
+                "status": status,
+                "direction": direction,
+                "reason": reason,
+                "signal_strength": round(abs(z), 4) if has_valid_z else 0.0,
                 "gross_spread": edge_info["gross_spread"],
-                "total_costs": edge_info["total_costs"],
-                "net_edge_value": edge_info["net_edge"],
-                "is_tradeable": edge_info["is_tradeable"],
-                "liquidity_penalty": edge_info["liquidity_penalty"],
+                "total_costs": total_costs,
+                "net_edge_value": net_edge_val,
+                "is_tradeable": is_tradeable,
+                "liquidity_penalty": penalty,
                 "cost_breakdown": edge_info["cost_breakdown"],
             }
         )
