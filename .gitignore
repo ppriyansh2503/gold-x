@@ -1,32 +1,44 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
 # Python
 __pycache__/
 *.pyc
 *.pyo
 .venv/
 venv/
+env/
 *.egg-info/
 dist/
 build/
 .pytest_cache/
+.coverage
+htmlcov/
+*.log
 
 # Node
 node_modules/
+**/node_modules/
 frontend/dist/
+frontend/node_modules/
+.npm/
 
-# Environment
-.env
-.env.local
-.env.production
-
-# IDE
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Docker
+# Docker & Database
 pgdata/
+.docker/

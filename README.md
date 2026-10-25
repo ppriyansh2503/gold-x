@@ -192,6 +192,23 @@ make test-docker
 - **Interactive Financial Terminal:** [http://localhost](http://localhost)
 - **FastAPI OpenAPI Swagger Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
+### 4.4. Environment Variables Configuration
+
+Copy `.env.example` to `.env` before running. All sensitive variables must be populated using private values:
+
+| Variable | Default Placeholder | Description |
+| :--- | :--- | :--- |
+| `POSTGRES_DB` | `goldx` | PostgreSQL database name |
+| `POSTGRES_USER` | `goldx` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `your_secure_password_here` | PostgreSQL user password |
+| `DB_PORT` | `5432` | PostgreSQL host exposure port |
+| `API_PORT` | `8000` | FastAPI backend host port |
+| `WEB_PORT` | `80` | Nginx web frontend host port |
+| `DATABASE_URL` | `postgresql+asyncpg://goldx:...@db:5432/goldx` | Async database URI for FastAPI SQLAlchemy |
+| `DATABASE_URL_SYNC` | `postgresql+psycopg2://goldx:...@db:5432/goldx` | Synchronous database URI for migrations/scripts |
+| `MCX_BHAVCOPY_URL` | `https://www.mcxindia.com/...` | Official MCX Bhavcopy download portal URL |
+| `CORS_ORIGINS` | `["http://localhost"]` | JSON array of allowed origins for web access |
+
 ---
 
 ## 5. REST API Reference
@@ -210,41 +227,49 @@ make test-docker
 
 ---
 
-## 6. Financial Terminal Views
+## 6. Financial Terminal Views & Platform Screenshots
 
 The upgraded GOLD-X interface is organized into 6 specialized views:
 
-1. **Market Overview:**
-   - Real-time observation trade date indicator (`2026-09-18`).
-   - Benchmark reference price (₹1,55,001.63 / 10g 999 basis).
-   - Normalized contract inventory table comparing raw quotation units against standardized 10g 999 values.
-   - Deviation from benchmark reference with sorting and filtering.
+### 6.1. Market Overview
+*Real-time observation trade date indicator (`2026-09-18`), benchmark reference price (₹1,55,001.63 / 10g 999 basis), and normalized contract inventory table comparing raw quotation units against standardized 10g 999 values.*
 
-2. **Parity Radar:**
-   - Expiry selector pills allowing instantaneous switching between active delivery cycles.
-   - Interactive native vector SVG bar chart comparing normalized prices side-by-side with hover tooltips.
-   - Clear identification of the cheapest contract (green) and richest contract (red) for each cycle.
+![01 Market Overview](docs/screenshots/01_market_overview.png)
 
-3. **Relative-Value Signals:**
-   - Status filter tabs: `All Pairs`, `Tradeable Signals`, `Baseline Formation`, `Rejected: Costs Exceed Edge`.
-   - Plain-English reason banner for every pair explaining exactly why a signal was generated or why costs wiped out the edge.
-   - Interactive **Cost Autopsy Drawer** detailing brokerage, exchange fees, STT, GST, slippage, and liquidity penalty.
+---
 
-4. **Backtest Engine:**
-   - Interactive simulation parameter controls (Rolling window slider: 5–60 days, Z-threshold slider: 1.0–4.0σ).
-   - Data baseline educational notice explaining rolling window requirements without fabricating data.
-   - Cumulative strategy equity curve component and performance summary cards.
+### 6.2. Parity Radar
+*Expiry selector pills allowing instantaneous switching between active delivery cycles, interactive native vector SVG bar chart comparing normalized prices side-by-side, and clear identification of cheapest and richest contracts.*
 
-5. **Contract Lifecycle:**
-   - Accurate DTE (Days To Expiry) measured relative to the observation trade date.
-   - Status classifications (`ACTIVE`, `NEAR_EXPIRY`, `TENDER_PERIOD`, `EXPIRED`).
-   - Search filter by contract symbol.
-   - Interactive **Official MCX Contract Specifications** modal.
+![02 Parity Radar](docs/screenshots/02_parity_radar.png)
 
-6. **System & Data Health:**
-   - PostgreSQL row counts and trade date telemetry.
-   - Ingestion provenance documentation detailing the Akamai WAF perimeter.
-   - Interactive CSV import trigger controller.
+---
+
+### 6.3. Relative-Value Signals & Cost Autopsy
+*Status filter tabs (`All Pairs`, `Tradeable Signals`, `Baseline Formation`, `Rejected: Costs Exceed Edge`), plain-English reason banner for every pair, and interactive Cost Autopsy Drawer detailing exchange fees, brokerage, STT, GST, slippage, and liquidity penalties.*
+
+![03 Signals and Cost Autopsy](docs/screenshots/03_signals_cost_autopsy.png)
+
+---
+
+### 6.4. Backtest Engine
+*Walk-forward simulation controls (rolling window slider: 5–60 days, Z-threshold slider: 1.0–4.0σ), cumulative strategy equity curve, and educational baseline formation notice adhering to strict data integrity standards.*
+
+![04 Backtest Engine](docs/screenshots/04_backtest_engine.png)
+
+---
+
+### 6.5. Contract Lifecycle & Specifications
+*Accurate DTE (Days To Expiry) measured relative to observation trade date, lifecycle status badges (`ACTIVE`, `NEAR_EXPIRY`, `TENDER_PERIOD`), symbol search filter, and interactive Official MCX Contract Specifications modal.*
+
+![05 Contract Lifecycle](docs/screenshots/05_contract_lifecycle.png)
+
+---
+
+### 6.6. System & Data Health
+*PostgreSQL row counts and trade date telemetry, Akamai WAF perimeter provenance documentation, and on-demand CSV ingestion trigger controller.*
+
+![06 System & Data Health](docs/screenshots/06_system_status.png)
 
 ---
 
@@ -328,6 +353,35 @@ tests/test_validator.py::TestValidator::test_validate_response_date PASSED
 
 ---
 
-## 9. Regulatory & Risk Disclaimer
+## 9. Known Limitations & Future Improvements
+
+### Current Limitations
+1. **Single Historical Settlement Snapshot (`2026-09-18`):**
+   - The platform operates on official MCX Bhavcopy EOD settlement data. Because MCX perimeter bot detection (Akamai WAF) restricts automated cloud scrapers, historical data accumulation currently relies on the local CSV ingestion pipeline.
+2. **Rolling Window Statistical Baseline:**
+   - 20-day rolling Z-scores require 21 trading days of continuous history. Until 21 trading days are ingested, signals operate in `BASELINE_FORMATION` mode and the backtest engine transparently flags `insufficient_data` to avoid look-ahead bias and curve fitting.
+3. **End-of-Day (EOD) vs Real-Time Tick Ingestion:**
+   - The platform calculates parity on official settlement closes. Real-time intraday tick streaming requires broker WebSocket connectivity (e.g. Zerodha Kite Connect, Angel One SmartAPI).
+
+### Future Roadmap
+- [ ] **Direct Broker WebSocket Integration:** Stream live level-2 market depth (5-best bid/ask) to compute executable micro-spreads in real time.
+- [ ] **Cross-Commodity Parity Intelligence:** Extend the normalization engine to Silver derivatives (`SILVER`, `SILVERM`, `SILVERMIC`) and Crude Oil tranches.
+- [ ] **Automated Order Execution Gateway:** Connect net edge signals to broker OMS/RMS via FIX protocol with pre-trade margin verification.
+- [ ] **Calendar Spread & Roll-Down Analysis:** Formalize term-structure curve carry models between consecutive monthly contracts.
+
+---
+
+## 10. Team & Hackathon Contribution
+
+Developed for **Problem Statement 03: Commodity Derivatives Intelligence**:
+
+- **Lead Quantitative Developer & Full-Stack Architect:** Priyanshu ([@ppriyansh2503](https://github.com/ppriyansh2503))
+- **Team / Organization:** Independent Research & Development
+- **Hackathon Track:** Commodity Derivatives Intelligence
+- **Repository:** [https://github.com/ppriyansh2503/gold-x](https://github.com/ppriyansh2503/gold-x)
+
+---
+
+## 11. Regulatory & Risk Disclaimer
 
 *GOLD-X is a quantitative research and analytics terminal developed solely for educational and hackathon demonstration purposes. The platform does not constitute investment advice, financial solicitation, or a recommendation to buy or sell commodity futures. Futures trading on the Multi Commodity Exchange of India (MCX) carries substantial financial risk, including the potential loss of principal capital due to leverage. Transaction fees, regulatory charges, and tax rates are modeled on current schedules and may change in accordance with SEBI circulars.*
