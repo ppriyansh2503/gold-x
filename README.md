@@ -377,7 +377,7 @@ Developed for **Problem Statement 03: Commodity Derivatives Intelligence**:
 
 - **Lead Quantitative Developer & Full-Stack Architect:** Priyanshu ([@ppriyansh2503](https://github.com/ppriyansh2503))
 - **Team / Organization:** Independent Research & Development
-- **Team member : Gaurav[Backend & Data Engineering]([@Gaurav-2015](https://github.com/Gaurav-2015)) || Aman Gill [Frontend & Dashboard Development]([@amangill1819](https://github.com/amangill1819))
+- **Team member : Gaurav [Backend & Data Engineering]([@Gaurav-2015](https://github.com/Gaurav-2015)) || Aman Gill [Frontend & Dashboard Development]([@amangill1819](https://github.com/amangill1819))**
 - **Hackathon Track:** Commodity Derivatives Intelligence
 - **Repository:** [https://github.com/ppriyansh2503/gold-x](https://github.com/ppriyansh2503/gold-x)
 
